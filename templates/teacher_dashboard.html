@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Teacher Dashboard</h2>
+<h3>Your Classes</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Location</th>
+            <th>Attendees</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for class in classes %}
+            <tr>
+                <td>{{ class.name }}</td>
+                <td>{{ class.date }}</td>
+                <td>{{ class.time }}</td>
+                <td>{{ class.location }}</td>
+                <td>
+                    {% for attendee in class.attendees %}
+                        {{ attendee.name }} (Stipend: {{ 'Yes' if attendee.stipend else 'No' }}, Group: {{ attendee.group or '-' }}, Comments: {{ attendee.comments or '-' }}){% if attendee.checked_in %} (Checked In){% endif %}<br>
+                    {% endfor %}
+                </td>
+                <td>
+                    {% for attendee in class.attendees %}
+                        {% if not attendee.checked_in %}
+                            <form method="POST" action="{{ url_for('teacher.mark_attendance', class_id=class.id) }}">
+                                <input type="hidden" name="attendee_id" value="{{ attendee.id }}">
+                                <button type="submit" class="btn btn-sm btn-primary">Mark {{ attendee.name }} Present</button>
+                            </form>
+                        {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,14 @@
+body {
+    background-color: #f8f9fa;
+}
+.container {
+    max-width: 800px;
+}
+.btn-primary {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+.btn-primary:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
