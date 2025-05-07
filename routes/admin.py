@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash,
 from flask_login import login_required, current_user
 from extensions import db
 from models import Class, User, Attendee
-from datetime import datetime
+from datetime import datetime, date
 import csv
 from io import StringIO
 
@@ -16,7 +16,8 @@ def dashboard():
         return redirect(url_for('auth.login'))
     classes = Class.query.all()
     teachers = User.query.filter_by(role='teacher').all()
-    return render_template('admin_dashboard.html', classes=classes, teachers=teachers)
+    users = User.query.all()
+    return render_template('admin_dashboard.html', classes=classes, teachers=teachers, users=users)
 
 @bp.route('/admin/add_class', methods=['POST'])
 @login_required
@@ -51,6 +52,18 @@ def edit_class(class_id):
     flash('Class updated successfully')
     return redirect(url_for('admin.dashboard'))
 
+@bp.route('/admin/delete_class/<int:class_id>', methods=['POST'])
+@login_required
+def delete_class(class_id):
+    if current_user.role != 'admin':
+        flash('Access denied')
+        return redirect(url_for('auth.login'))
+    class_ = Class.query.get_or_404(class_id)
+    db.session.delete(class_)
+    db.session.commit()
+    flash('Class deleted successfully')
+    return redirect(url_for('admin.dashboard'))
+
 @bp.route('/admin/add_attendee/<int:class_id>', methods=['POST'])
 @login_required
 def add_attendee(class_id):
@@ -83,6 +96,64 @@ def edit_attendee(attendee_id):
     flash('Attendee updated successfully')
     return redirect(url_for('admin.dashboard'))
 
+@bp.route('/admin/delete_attendee/<int:attendee_id>', methods=['POST'])
+@login_required
+def delete_attendee(attendee_id):
+    if current_user.role != 'admin':
+        flash('Access denied')
+        return redirect(url_for('auth.login'))
+    attendee = Attendee.query.get_or_404(attendee_id)
+    db.session.delete(attendee)
+    db.session.commit()
+    flash('Attendee deleted successfully')
+    return redirect(url_for('admin.dashboard'))
+
+@bp.route('/admin/add_user', methods=['POST'])
+@login_required
+def add_user():
+    if current_user.role != 'admin':
+        flash('Access denied')
+        return redirect(url_for('auth.login'))
+    username = request.form['username']
+    password = request.form['password']
+    role = request.form['role']
+    
+    if User.query.filter_by(username=username).first():
+        flash('Username already exists')
+        return redirect(url_for('admin.dashboard'))
+    
+    if role not in ['admin', 'frontdesk', 'teacher']:
+        flash('Invalid role')
+        return redirect(url_for('admin.dashboard'))
+    
+    new_user = User(username=username, role=role)
+    new_user.set_password(password)
+    db.session.add(new_user)
+    db.session.commit()
+    flash('User added successfully')
+    return redirect(url_for('admin.dashboard'))
+
+@bp.route('/admin/delete_user/<int:user_id>', methods=['POST'])
+@login_required
+def delete_user(user_id):
+    if current_user.role != 'admin':
+        flash('Access denied')
+        return redirect(url_for('auth.login'))
+    user = User.query.get_or_404(user_id)
+    
+    if user.id == current_user.id:
+        flash('Cannot delete your own account')
+        return redirect(url_for('admin.dashboard'))
+    
+    if user.role == 'teacher' and user.classes:
+        flash('Cannot delete teacher with assigned classes')
+        return redirect(url_for('admin.dashboard'))
+        
+    db.session.delete(user)
+    db.session.commit()
+    flash('User deleted successfully')
+    return redirect(url_for('admin.dashboard'))
+
 @bp.route('/admin/report')
 @login_required
 def report():
@@ -90,7 +161,28 @@ def report():
         flash('Access denied')
         return redirect(url_for('auth.login'))
     
-    classes = Class.query.order_by(Class.date, Class.time).all()
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    teacher_id = request.args.get('teacher_id')
+    
+    query = Class.query
+    if start_date:
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            query = query.filter(Class.date >= start_date)
+        except ValueError:
+            flash('Invalid start date')
+    if end_date:
+        try:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            query = query.filter(Class.date <= end_date)
+        except ValueError:
+            flash('Invalid end date')
+    if teacher_id and teacher_id != 'all':
+        query = query.filter_by(teacher_id=teacher_id)
+    
+    classes = query.order_by(Class.date, Class.time).all()
+    teachers = User.query.filter_by(role='teacher').all()
     
     if request.args.get('format') == 'csv':
         output = StringIO()
@@ -117,4 +209,4 @@ def report():
             headers={'Content-Disposition': 'attachment; filename=wellness_report.csv'}
         )
     
-    return render_template('report.html', classes=classes)
+    return render_template('report.html', classes=classes, teachers=teachers)

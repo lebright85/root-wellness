@@ -1,14 +1,172 @@
+/* Root Wellness App Custom Styles */
+
+/* Color Palette */
+:root {
+    --primary: #2e7d32; /* Forest Green */
+    --secondary: #4caf50; /* Light Green */
+    --accent: #0288d1; /* Blue */
+    --background: #f4f7f6; /* Light Gray-Green */
+    --text: #1a3c34; /* Dark Green-Gray */
+    --danger: #d32f2f; /* Red for delete */
+}
+
+/* Typography */
 body {
-    background-color: #f8f9fa;
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--background);
+    color: var(--text);
 }
-.container {
-    max-width: 800px;
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    color: var(--primary);
 }
+
+/* Navbar */
+.navbar {
+    background-color: var(--primary);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar-brand img {
+    max-height: 10px; /* Increased logo size for desktop */
+    width: auto;
+}
+
+.navbar-brand span {
+    font-size: 1.5rem; /* Slightly larger text to match logo */
+    font-weight: 500;
+    color: white;
+}
+
+.nav-link {
+    color: white !important;
+    transition: color 0.2s;
+}
+
+.nav-link:hover {
+    color: var(--secondary) !important;
+}
+
+/* Buttons */
 .btn-primary {
-    background-color: #28a745;
-    border-color: #28a745;
+    background-color: var(--primary);
+    border-color: var(--primary);
+    border-radius: 8px;
+    padding: 10px 20px;
+    transition: background-color 0.2s;
 }
+
 .btn-primary:hover {
-    background-color: #218838;
-    border-color: #1e7e34;
+    background-color: var(--secondary);
+    border-color: var(--secondary);
+}
+
+.btn-danger {
+    border-radius: 8px;
+    padding: 10px 20px;
+}
+
+.btn-sm {
+    padding: 5px 10px;
+}
+
+/* Forms */
+.form-control {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 5px rgba(2, 136, 209, 0.3);
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--text);
+}
+
+/* Tables */
+.table {
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.table th {
+    background-color: var(--primary);
+    color: white;
+    padding: 12px;
+}
+
+.table td {
+    padding: 12px;
+    vertical-align: middle;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f9f9f9;
+}
+
+.table tbody tr:hover {
+    background-color: #e8f5e9;
+}
+
+/* Cards */
+.card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background-color: var(--primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 8px 8px 0 0;
+}
+
+/* Modals */
+.modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    background-color: var(--primary);
+    color: white;
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-footer {
+    border-top: none;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .form-control, .btn {
+        font-size: 14px;
+    }
+    
+    .table {
+        font-size: 14px;
+    }
+    
+    .modal-dialog {
+        margin: 10px;
+    }
+    
+    .navbar-brand img {
+        max-height: 40px; /* Adjusted logo size for mobile */
+    }
+    
+    .navbar-brand span {
+        font-size: 1.2rem; /* Adjusted text size for mobile */
+    }
 }

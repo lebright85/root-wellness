@@ -22,14 +22,14 @@ class Class(db.Model):
     date = db.Column(db.Date, nullable=False)
     time = db.Column(db.Time, nullable=False)
     teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    location = db.Column(db.String(100), nullable=False)  # New field
+    location = db.Column(db.String(100), nullable=False)
     attendees = db.relationship('Attendee', backref='class', lazy=True)
 
 class Attendee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    stipend = db.Column(db.Boolean, default=False)  # Yes/No (True/False)
-    group = db.Column(db.String(100), nullable=True)  # Group name
-    comments = db.Column(db.Text, nullable=True)  # Comments
+    stipend = db.Column(db.Boolean, default=False)
+    group = db.Column(db.String(100), nullable=True)
+    comments = db.Column(db.Text, nullable=True)
     class_id = db.Column(db.Integer, db.ForeignKey('class.id'), nullable=False)
     checked_in = db.Column(db.Boolean, default=False)
