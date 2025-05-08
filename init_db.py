@@ -3,7 +3,7 @@ from models import User, Class, Attendee
 from datetime import date, time
 
 with app.app_context():
-    # Create tables (if not already created by migration)
+    # Create tables
     db.create_all()
     
     # Create admin user
@@ -20,25 +20,40 @@ with app.app_context():
         db.session.add(teacher)
         print("Created teacher user: teacher1, password: test123")
     
-    # Create test class
+    # Create front desk user
+    if not User.query.filter_by(username='frontdesk1').first():
+        frontdesk = User(username='frontdesk1', role='frontdesk')
+        frontdesk.set_password('test123')
+        db.session.add(frontdesk)
+        print("Created front desk user: frontdesk1, password: test123")
+    
+    # Create test classes
     if not Class.query.filter_by(name='Yoga Basics').first():
         teacher = User.query.filter_by(username='teacher1').first()
         if teacher:
-            class_ = Class(
+            class1 = Class(
                 name='Yoga Basics',
                 date=date(2025, 5, 10),
                 time=time(9, 0),
                 teacher_id=teacher.id,
                 location='Studio A'
             )
-            db.session.add(class_)
-            print("Created class: Yoga Basics")
+            class2 = Class(
+                name='Advanced Yoga',
+                date=date(2025, 5, 11),
+                time=time(11, 0),
+                teacher_id=teacher.id,
+                location='Studio B'
+            )
+            db.session.add_all([class1, class2])
+            print("Created classes: Yoga Basics, Advanced Yoga")
     
-    # Create test attendee
+    # Create test attendees
     if not Attendee.query.filter_by(name='John Doe').first():
-        class_ = Class.query.filter_by(name='Yoga Basics').first()
-        if class_:
-            attendee = Attendee(
+        class1 = Class.query.filter_by(name='Yoga Basics').first()
+        class2 = Class.query.filter_by(name='Advanced Yoga').first()
+        if class1 and class2:
+            attendee1 = Attendee(
                 name='John Doe',
                 stipend=True,
                 group='Morning',
@@ -48,9 +63,21 @@ with app.app_context():
                 time_out=time(10, 0),
                 comments='First class',
                 checked_in=False,
-                class_id=class_.id
+                class_id=class1.id
             )
-            db.session.add(attendee)
-            print("Created attendee: John Doe")
+            attendee2 = Attendee(
+                name='Jane Smith',
+                stipend=False,
+                group='Midday',
+                group_hour='1.5 hr',
+                group_type='Advanced',
+                time_in=time(11, 0),
+                time_out=time(12, 30),
+                comments='Returning student',
+                checked_in=False,
+                class_id=class2.id
+            )
+            db.session.add_all([attendee1, attendee2])
+            print("Created attendees: John Doe, Jane Smith")
     
     db.session.commit()

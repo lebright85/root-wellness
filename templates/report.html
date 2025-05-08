@@ -1,101 +1,64 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h2 class="mb-0">Wellness Class Report</h2>
-    </div>
-    <div class="card-body">
-        <div class="mb-4">
-            <a href="{{ url_for('admin.report', format='csv', start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), teacher_id=request.args.get('teacher_id')) }}" class="btn btn-primary"><i class="bi bi-download me-2"></i>Download as CSV</a>
-            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary"><i class="bi bi-arrow-left me-2"></i>Back to Dashboard</a>
-        </div>
-
-        <div class="card mb-4">
-            <div class="card-header">Filter Report</div>
-            <div class="card-body">
-                <form method="GET" action="{{ url_for('admin.report') }}">
-                    <div class="row mb-3">
-                        <div class="col-md-4 mb-2">
-                            <label for="start_date" class="form-label">Start Date</label>
-                            <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.args.get('start_date') or '' }}">
-                        </div>
-                        <div class="col-md-4 mb-2">
-                            <label for="end_date" class="form-label">End Date</label>
-                            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.args.get('end_date') or '' }}">
-                        </div>
-                        <div class="col-md-3 mb-2">
-                            <label for="teacher_id" class="form-label">Teacher</label>
-                            <select class="form-control" id="teacher_id" name="teacher_id">
-                                <option value="all" {% if not request.args.get('teacher_id') or request.args.get('teacher_id') == 'all' %}selected{% endif %}>All Teachers</option>
-                                {% for teacher in teachers %}
-                                    <option value="{{ teacher.id }}" {% if request.args.get('teacher_id') == teacher.id|string %}selected{% endif %}>{{ teacher.username }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-1 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary"><i class="bi bi-funnel me-2"></i>Apply</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        {% if classes %}
-            <div class="card">
-                <div class="card-header">Report Results</div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Class Name</th>
-                                    <th>Date</th>
-                                    <th>Time</th>
-                                    <th>Teacher</th>
-                                    <th>Location</th>
-                                    <th>Attendees</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for class in classes %}
-                                    <tr>
-                                        <td>{{ class.name }}</td>
-                                        <td>{{ class.date }}</td>
-                                        <td>{{ class.time }}</td>
-                                        <td>{{ class.teacher.username }}</td>
-                                        <td>{{ class.location }}</td>
-                                        <td>
-                                            {% if class.attendees %}
-                                                <ul class="list-unstyled mb-0">
-                                                    {% for attendee in class.attendees %}
-                                                        <li>
-                                                            {{ attendee.name }} (Stipend: {{ 'Yes' if attendee.stipend else 'No' }},
-                                                            Group: {{ attendee.group or '-' }},
-                                                            Group Hour: {{ attendee.group_hour or '-' }},
-                                                            Group Type: {{ attendee.group_type or '-' }},
-                                                            Time In: {{ attendee.time_in.strftime('%H:%M') if attendee.time_in else '-' }},
-                                                            Time Out: {{ attendee.time_out.strftime('%H:%M') if attendee.time_out else '-' }},
-                                                            Comments: {{ attendee.comments or '-' }},
-                                                            Checked In: {{ 'Yes' if attendee.checked_in else 'No' }})
-                                                        </li>
-                                                    {% endfor %}
-                                                </ul>
-                                            {% else %}
-                                                No attendees
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+<div class="container mt-5">
+    <h1 class="mb-4">Reports</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-            </div>
-        {% else %}
-            <div class="alert alert-info" role="alert">
-                No classes match the selected filters.
-            </div>
+            {% endfor %}
         {% endif %}
+    {% endwith %}
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Class and Attendee Summary</h3>
+        </div>
+        <div class="card-body">
+            <p>Total Classes: {{ total_classes }}</p>
+            <p>Total Attendees: {{ total_attendees }}</p>
+            <p>Checked-In Attendees: {{ checked_in_attendees }}</p>
+            
+            {% if classes %}
+                <h4>Class Details</h4>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Class Name</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Location</th>
+                            <th>Teacher</th>
+                            <th>Attendees</th>
+                            <th>Checked-In</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for class_ in classes %}
+                            <tr>
+                                <td>{{ class_.name }}</td>
+                                <td>{{ class_.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ class_.time.strftime('%H:%M') }}</td>
+                                <td>{{ class_.location }}</td>
+                                <td>{{ class_.teacher.username }}</td>
+                                <td>{{ class_.attendees | length }}</td>
+                                <td>{{ class_.attendees | selectattr('checked_in') | list | length }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No classes available.</p>
+            {% endif %}
+        </div>
     </div>
+    
+    <a href="{{ url_for('admin.download_report') }}" class="btn btn-success mb-3">Download Report (CSV)</a>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+    <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary">Logout</a>
 </div>
 {% endblock %}
