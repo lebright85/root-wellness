@@ -74,7 +74,21 @@ def add_attendee(class_id):
     stipend = 'stipend' in request.form
     group = request.form.get('group') or None
     comments = request.form.get('comments') or None
-    new_attendee = Attendee(name=name, stipend=stipend, group=group, comments=comments, class_id=class_id)
+    group_hour = request.form.get('group_hour') or None
+    group_type = request.form.get('group_type') or None
+    time_in = datetime.strptime(request.form['time_in'], '%H:%M').time() if request.form.get('time_in') else None
+    time_out = datetime.strptime(request.form['time_out'], '%H:%M').time() if request.form.get('time_out') else None
+    new_attendee = Attendee(
+        name=name,
+        stipend=stipend,
+        group=group,
+        comments=comments,
+        class_id=class_id,
+        group_hour=group_hour,
+        group_type=group_type,
+        time_in=time_in,
+        time_out=time_out
+    )
     db.session.add(new_attendee)
     db.session.commit()
     flash('Attendee added successfully')
@@ -92,6 +106,10 @@ def edit_attendee(attendee_id):
     attendee.group = request.form.get('group') or None
     attendee.comments = request.form.get('comments') or None
     attendee.checked_in = 'checked_in' in request.form
+    attendee.group_hour = request.form.get('group_hour') or None
+    attendee.group_type = request.form.get('group_type') or None
+    attendee.time_in = datetime.strptime(request.form['time_in'], '%H:%M').time() if request.form.get('time_in') else None
+    attendee.time_out = datetime.strptime(request.form['time_out'], '%H:%M').time() if request.form.get('time_out') else None
     db.session.commit()
     flash('Attendee updated successfully')
     return redirect(url_for('admin.dashboard'))
@@ -187,7 +205,7 @@ def report():
     if request.args.get('format') == 'csv':
         output = StringIO()
         writer = csv.writer(output)
-        writer.writerow(['Class Name', 'Date', 'Time', 'Teacher', 'Location', 'Attendee Name', 'Stipend', 'Group', 'Comments', 'Checked In'])
+        writer.writerow(['Class Name', 'Date', 'Time', 'Teacher', 'Location', 'Attendee Name', 'Stipend', 'Group', 'Comments', 'Checked In', 'Group Hour', 'Group Type', 'Time In', 'Time Out'])
         for class_ in classes:
             for attendee in class_.attendees:
                 writer.writerow([
@@ -200,7 +218,11 @@ def report():
                     'Yes' if attendee.stipend else 'No',
                     attendee.group or '',
                     attendee.comments or '',
-                    'Yes' if attendee.checked_in else 'No'
+                    'Yes' if attendee.checked_in else 'No',
+                    attendee.group_hour or '',
+                    attendee.group_type or '',
+                    attendee.time_in.strftime('%H:%M') if attendee.time_in else '',
+                    attendee.time_out.strftime('%H:%M') if attendee.time_out else ''
                 ])
         output.seek(0)
         return Response(

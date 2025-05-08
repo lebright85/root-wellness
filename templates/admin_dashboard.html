@@ -218,105 +218,154 @@
                 <div class="card-header">{{ class.name }} ({{ class.date }})</div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('admin.add_attendee', class_id=class.id) }}">
-                        <div class="input-group mb-3">
-                            <input type="text" class="form-control" name="name" placeholder="Attendee Name" required>
-                            <div class="input-group-text">
-                                <input type="checkbox" name="stipend" id="stipend_{{ class.id }}"> Stipend
+                        <div class="row mb-3">
+                            <div class="col-md-3 mb-2">
+                                <input type="text" class="form-control" name="name" placeholder="Attendee Name" required>
                             </div>
-                            <input type="text" class="form-control" name="group" placeholder="Group (optional)">
-                            <input type="text" class="form-control" name="comments" placeholder="Comments (optional)">
-                            <button type="submit" class="btn btn-primary"><i class="bi bi-person-plus me-2"></i>Add Attendee</button>
+                            <div class="col-md-2 mb-2">
+                                <div class="input-group-text">
+                                    <input type="checkbox" name="stipend" id="stipend_{{ class.id }}"> Stipend
+                                </div>
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                <input type="text" class="form-control" name="group" placeholder="Group (optional)">
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                <input type="text" class="form-control" name="group_hour" placeholder="Group Hour (optional)">
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <input type="text" class="form-control" name="group_type" placeholder="Group Type (optional)">
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                <input type="time" class="form-control" name="time_in" placeholder="Time In (optional)">
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                <input type="time" class="form-control" name="time_out" placeholder="Time Out (optional)">
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <input type="text" class="form-control" name="comments" placeholder="Comments (optional)">
+                            </div>
+                            <div class="col-md-2 mb-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary"><i class="bi bi-person-plus me-2"></i>Add Attendee</button>
+                            </div>
                         </div>
                     </form>
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Stipend</th>
-                                <th>Group</th>
-                                <th>Comments</th>
-                                <th>Checked In</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for attendee in class.attendees %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
                                 <tr>
-                                    <td>{{ attendee.name }}</td>
-                                    <td>{{ 'Yes' if attendee.stipend else 'No' }}</td>
-                                    <td>{{ attendee.group or '-' }}</td>
-                                    <td>{{ attendee.comments or '-' }}</td>
-                                    <td>{{ 'Yes' if attendee.checked_in else 'No' }}</td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-warning me-1" data-bs-toggle="modal" data-bs-target="#editAttendeeModal{{ attendee.id }}"><i class="bi bi-pencil me-2"></i>Edit</button>
-                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAttendeeModal{{ attendee.id }}"><i class="bi bi-trash me-2"></i>Delete</button>
-                                    </td>
+                                    <th>Name</th>
+                                    <th>Stipend</th>
+                                    <th>Group</th>
+                                    <th>Group Hour</th>
+                                    <th>Group Type</th>
+                                    <th>Time In</th>
+                                    <th>Time Out</th>
+                                    <th>Comments</th>
+                                    <th>Checked In</th>
+                                    <th>Actions</th>
                                 </tr>
-                                <!-- Edit Attendee Modal -->
-                                <div class="modal fade" id="editAttendeeModal{{ attendee.id }}" tabindex="-1" aria-labelledby="editAttendeeModalLabel{{ attendee.id }}" aria-hidden="true">
-                                    <div class="modal-dialog modal-lg">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="editAttendeeModalLabel{{ attendee.id }}">Edit Attendee: {{ attendee.name }}</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </thead>
+                            <tbody>
+                                {% for attendee in class.attendees %}
+                                    <tr>
+                                        <td>{{ attendee.name }}</td>
+                                        <td>{{ 'Yes' if attendee.stipend else 'No' }}</td>
+                                        <td>{{ attendee.group or '-' }}</td>
+                                        <td>{{ attendee.group_hour or '-' }}</td>
+                                        <td>{{ attendee.group_type or '-' }}</td>
+                                        <td>{{ attendee.time_in.strftime('%H:%M') if attendee.time_in else '-' }}</td>
+                                        <td>{{ attendee.time_out.strftime('%H:%M') if attendee.time_out else '-' }}</td>
+                                        <td>{{ attendee.comments or '-' }}</td>
+                                        <td>{{ 'Yes' if attendee.checked_in else 'No' }}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-warning me-1" data-bs-toggle="modal" data-bs-target="#editAttendeeModal{{ attendee.id }}"><i class="bi bi-pencil me-2"></i>Edit</button>
+                                            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAttendeeModal{{ attendee.id }}"><i class="bi bi-trash me-2"></i>Delete</button>
+                                        </td>
+                                    </tr>
+                                    <!-- Edit Attendee Modal -->
+                                    <div class="modal fade" id="editAttendeeModal{{ attendee.id }}" tabindex="-1" aria-labelledby="editAttendeeModalLabel{{ attendee.id }}" aria-hidden="true">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="editAttendeeModalLabel{{ attendee.id }}">Edit Attendee: {{ attendee.name }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <form method="POST" action="{{ url_for('admin.edit_attendee', attendee_id=attendee.id) }}">
+                                                    <div class="modal-body">
+                                                        <div class="mb-3">
+                                                            <label for="name_att_{{ attendee.id }}" class="form-label">Name</label>
+                                                            <input type="text" class="form-control" id="name_att_{{ attendee.id }}" name="name" value="{{ attendee.name }}" required>
+                                                        </div>
+                                                        <div class="mb-3 form-check">
+                                                            <input type="checkbox" class="form-check-input" id="stipend_att_{{ attendee.id }}" name="stipend" {% if attendee.stipend %}checked{% endif %}>
+                                                            <label class="form-check-label" for="stipend_att_{{ attendee.id }}">Stipend</label>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="group_att_{{ attendee.id }}" class="form-label">Group (optional)</label>
+                                                            <input type="text" class="form-control" id="group_att_{{ attendee.id }}" name="group" value="{{ attendee.group or '' }}">
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="group_hour_att_{{ attendee.id }}" class="form-label">Group Hour (optional)</label>
+                                                            <input type="text" class="form-control" id="group_hour_att_{{ attendee.id }}" name="group_hour" value="{{ attendee.group_hour or '' }}">
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="group_type_att_{{ attendee.id }}" class="form-label">Group Type (optional)</label>
+                                                            <input type="text" class="form-control" id="group_type_att_{{ attendee.id }}" name="group_type" value="{{ attendee.group_type or '' }}">
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="time_in_att_{{ attendee.id }}" class="form-label">Time In (optional)</label>
+                                                            <input type="time" class="form-control" id="time_in_att_{{ attendee.id }}" name="time_in" value="{{ attendee.time_in.strftime('%H:%M') if attendee.time_in else '' }}">
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="time_out_att_{{ attendee.id }}" class="form-label">Time Out (optional)</label>
+                                                            <input type="time" class="form-control" id="time_out_att_{{ attendee.id }}" name="time_out" value="{{ attendee.time_out.strftime('%H:%M') if attendee.time_out else '' }}">
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="comments_att_{{ attendee.id }}" class="form-label">Comments (optional)</label>
+                                                            <input type="text" class="form-control" id="comments_att_{{ attendee.id }}" name="comments" value="{{ attendee.comments or '' }}">
+                                                        </div>
+                                                        <div class="mb-3 form-check">
+                                                            <input type="checkbox" class="form-check-input" id="checked_in_att_{{ attendee.id }}" name="checked_in" {% if attendee.checked_in %}checked{% endif %}>
+                                                            <label class="form-check-label" for="checked_in_att_{{ attendee.id }}">Checked In</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                                                    </div>
+                                                </form>
                                             </div>
-                                            <form method="POST" action="{{ url_for('admin.edit_attendee', attendee_id=attendee.id) }}">
+                                        </div>
+                                    </div>
+                                    <!-- Delete Attendee Modal -->
+                                    <div class="modal fade" id="deleteAttendeeModal{{ attendee.id }}" tabindex="-1" aria-labelledby="deleteAttendeeModalLabel{{ attendee.id }}" aria-hidden="true">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="deleteAttendeeModalLabel{{ attendee.id }}">Confirm Delete</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
                                                 <div class="modal-body">
-                                                    <div class="mb-3">
-                                                        <label for="name_att_{{ attendee.id }}" class="form-label">Name</label>
-                                                        <input type="text" class="form-control" id="name_att_{{ attendee.id }}" name="name" value="{{ attendee.name }}" required>
-                                                    </div>
-                                                    <div class="mb-3 form-check">
-                                                        <input type="checkbox" class="form-check-input" id="stipend_att_{{ attendee.id }}" name="stipend" {% if attendee.stipend %}checked{% endif %}>
-                                                        <label class="form-check-label" for="stipend_att_{{ attendee.id }}">Stipend</label>
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label for="group_att_{{ attendee.id }}" class="form-label">Group (optional)</label>
-                                                        <input type="text" class="form-control" id="group_att_{{ attendee.id }}" name="group" value="{{ attendee.group or '' }}">
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label for="comments_att_{{ attendee.id }}" class="form-label">Comments (optional)</label>
-                                                        <input type="text" class="form-control" id="comments_att_{{ attendee.id }}" name="comments" value="{{ attendee.comments or '' }}">
-                                                    </div>
-                                                    <div class="mb-3 form-check">
-                                                        <input type="checkbox" class="form-check-input" id="checked_in_att_{{ attendee.id }}" name="checked_in" {% if attendee.checked_in %}checked{% endif %}>
-                                                        <label class="form-check-label" for="checked_in_att_{{ attendee.id }}">Checked In</label>
-                                                    </div>
+                                                    Are you sure you want to delete attendee "{{ attendee.name }}" from "{{ class.name }}"? This action cannot be undone.
                                                 </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                    <button type="submit" class="btn btn-primary">Save Changes</button>
-                                                </div>
-                                            </form>
+                                                <form method="POST" action="{{ url_for('admin.delete_attendee', attendee_id=attendee.id) }}">
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                                    </div>
+                                                </form>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <!-- Delete Attendee Modal -->
-                                <div class="modal fade" id="deleteAttendeeModal{{ attendee.id }}" tabindex="-1" aria-labelledby="deleteAttendeeModalLabel{{ attendee.id }}" aria-hidden="true">
-                                    <div class="modal-dialog modal-lg">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="deleteAttendeeModalLabel{{ attendee.id }}">Confirm Delete</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                Are you sure you want to delete attendee "{{ attendee.name }}" from "{{ class.name }}"? This action cannot be undone.
-                                            </div>
-                                            <form method="POST" action="{{ url_for('admin.delete_attendee', attendee_id=attendee.id) }}">
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                    <button type="submit" class="btn btn-danger">Delete</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         {% endfor %}
     </div>
+    <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary">Logout</a>
 </div>
 {% endblock %}

@@ -68,7 +68,16 @@
                                             {% if class.attendees %}
                                                 <ul class="list-unstyled mb-0">
                                                     {% for attendee in class.attendees %}
-                                                        <li>{{ attendee.name }} (Stipend: {{ 'Yes' if attendee.stipend else 'No' }}, Group: {{ attendee.group or '-' }}, Comments: {{ attendee.comments or '-' }}, Checked In: {{ 'Yes' if attendee.checked_in else 'No' }})</li>
+                                                        <li>
+                                                            {{ attendee.name }} (Stipend: {{ 'Yes' if attendee.stipend else 'No' }},
+                                                            Group: {{ attendee.group or '-' }},
+                                                            Group Hour: {{ attendee.group_hour or '-' }},
+                                                            Group Type: {{ attendee.group_type or '-' }},
+                                                            Time In: {{ attendee.time_in.strftime('%H:%M') if attendee.time_in else '-' }},
+                                                            Time Out: {{ attendee.time_out.strftime('%H:%M') if attendee.time_out else '-' }},
+                                                            Comments: {{ attendee.comments or '-' }},
+                                                            Checked In: {{ 'Yes' if attendee.checked_in else 'No' }})
+                                                        </li>
                                                     {% endfor %}
                                                 </ul>
                                             {% else %}

@@ -1,38 +1,45 @@
 from flask import Flask, redirect, url_for
-import os
-from extensions import db, login_manager
-from models import User
+from flask_login import LoginManager
+from flask_migrate import Migrate
+from config import Config
+from extensions import db
+import logging
+from jinja2 import Environment, FileSystemLoader
 
-# Initialize Flask app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')
+app.config.from_object(Config)
 
-# Use PostgreSQL database URL from environment variable
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), 'instance', 'root_wellness.db'))
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+
+# Log template search path and available templates
+env = Environment(loader=FileSystemLoader('templates'))
+app.logger.debug(f"Template search path: {app.jinja_loader.searchpath}")
+app.logger.debug(f"Available templates: {env.list_templates()}")
 
 # Initialize extensions
 db.init_app(app)
-login_manager.init_app(app)
+login_manager = LoginManager(app)
+login_manager.login_view = 'auth.login'
+migrate = Migrate(app, db)
 
-# User loader for Flask-Login
-@login_manager.user_loader
-def load_user(user_id):
-    return db.session.get(User, int(user_id))
+# Register blueprints
+from routes import auth, admin, frontdesk, teacher
+app.register_blueprint(auth.bp)
+app.register_blueprint(admin.bp)
+app.register_blueprint(frontdesk.bp)
+app.register_blueprint(teacher.bp)
 
-# Default route to redirect to login
+# Root route to redirect to login
 @app.route('/')
 def index():
     return redirect(url_for('auth.login'))
 
-# Import and register blueprints after app initialization
-from routes import auth, admin, teacher, frontdesk
-app.register_blueprint(auth.bp)
-app.register_blueprint(admin.bp)
-app.register_blueprint(teacher.bp)
-app.register_blueprint(frontdesk.bp)
+# User loader for Flask-Login
+@login_manager.user_loader
+def load_user(user_id):
+    from models import User
+    return User.query.get(int(user_id))
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()  # Create database tables
-    app.run()
+    app.run(debug=True)

@@ -47,41 +47,74 @@
                 <div class="card-header">{{ class.name }} ({{ class.date }})</div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('frontdesk.add_attendee', class_id=class.id) }}">
-                        <div class="input-group mb-3">
-                            <input type="text" class="form-control" name="name" placeholder="Attendee Name" required>
-                            <div class="input-group-text">
-                                <input type="checkbox" name="stipend" id="stipend_{{ class.id }}"> Stipend
+                        <div class="row mb-3">
+                            <div class="col-md-3 mb-2">
+                                <input type="text" class="form-control" name="name" placeholder="Attendee Name" required>
                             </div>
-                            <input type="text" class="form-control" name="group" placeholder="Group (optional)">
-                            <input type="text" class="form-control" name="comments" placeholder="Comments (optional)">
-                            <button type="submit" class="btn btn-primary"><i class="bi bi-person-plus me-2"></i>Add Attendee</button>
+                            <div class="col-md-2 mb-2">
+                                <div class="input-group-text">
+                                    <input type="checkbox" name="stipend" id="stipend_{{ class.id }}"> Stipend
+                                </div>
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                <input type="text" class="form-control" name="group" placeholder="Group (optional)">
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                <input type="text" class="form-control" name="group_hour" placeholder="Group Hour (optional)">
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <input type="text" class="form-control" name="group_type" placeholder="Group Type (optional)">
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                <input type="time" class="form-control" name="time_in" placeholder="Time In (optional)">
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                <input type="time" class="form-control" name="time_out" placeholder="Time Out (optional)">
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <input type="text" class="form-control" name="comments" placeholder="Comments (optional)">
+                            </div>
+                            <div class="col-md-2 mb-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary"><i class="bi bi-person-plus me-2"></i>Add Attendee</button>
+                            </div>
                         </div>
                     </form>
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Stipend</th>
-                                <th>Group</th>
-                                <th>Comments</th>
-                                <th>Checked In</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for attendee in class.attendees %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
                                 <tr>
-                                    <td>{{ attendee.name }}</td>
-                                    <td>{{ 'Yes' if attendee.stipend else 'No' }}</td>
-                                    <td>{{ attendee.group or '-' }}</td>
-                                    <td>{{ attendee.comments or '-' }}</td>
-                                    <td>{{ 'Yes' if attendee.checked_in else 'No' }}</td>
+                                    <th>Name</th>
+                                    <th>Stipend</th>
+                                    <th>Group</th>
+                                    <th>Group Hour</th>
+                                    <th>Group Type</th>
+                                    <th>Time In</th>
+                                    <th>Time Out</th>
+                                    <th>Comments</th>
+                                    <th>Checked In</th>
                                 </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {% for attendee in class.attendees %}
+                                    <tr>
+                                        <td>{{ attendee.name }}</td>
+                                        <td>{{ 'Yes' if attendee.stipend else 'No' }}</td>
+                                        <td>{{ attendee.group or '-' }}</td>
+                                        <td>{{ attendee.group_hour or '-' }}</td>
+                                        <td>{{ attendee.group_type or '-' }}</td>
+                                        <td>{{ attendee.time_in.strftime('%H:%M') if attendee.time_in else '-' }}</td>
+                                        <td>{{ attendee.time_out.strftime('%H:%M') if attendee.time_out else '-' }}</td>
+                                        <td>{{ attendee.comments or '-' }}</td>
+                                        <td>{{ 'Yes' if attendee.checked_in else 'No' }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         {% endfor %}
     </div>
+    <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary">Logout</a>
 </div>
 {% endblock %}

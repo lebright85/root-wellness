@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
 from extensions import db
-from models import Class, Attendee, User
+from models import Class, User, Attendee
 from datetime import datetime
 
 bp = Blueprint('frontdesk', __name__)
@@ -40,10 +40,24 @@ def add_attendee(class_id):
         flash('Access denied')
         return redirect(url_for('auth.login'))
     name = request.form['name']
-    stipend = 'stipend' in request.form  # Checkbox: True if checked
+    stipend = 'stipend' in request.form
     group = request.form.get('group') or None
     comments = request.form.get('comments') or None
-    new_attendee = Attendee(name=name, stipend=stipend, group=group, comments=comments, class_id=class_id)
+    group_hour = request.form.get('group_hour') or None
+    group_type = request.form.get('group_type') or None
+    time_in = datetime.strptime(request.form['time_in'], '%H:%M').time() if request.form.get('time_in') else None
+    time_out = datetime.strptime(request.form['time_out'], '%H:%M').time() if request.form.get('time_out') else None
+    new_attendee = Attendee(
+        name=name,
+        stipend=stipend,
+        group=group,
+        comments=comments,
+        class_id=class_id,
+        group_hour=group_hour,
+        group_type=group_type,
+        time_in=time_in,
+        time_out=time_out
+    )
     db.session.add(new_attendee)
     db.session.commit()
     flash('Attendee added successfully')
