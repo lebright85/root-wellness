@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Manage Classes and Attendees</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Add Class Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Add New Class</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('frontdesk.manage') }}">
+                <div class="mb-3">
+                    <label for="class_name" class="form-label">Class Name</label>
+                    <input type="text" class="form-control" id="class_name" name="class_name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="class_date" class="form-label">Date</label>
+                    <input type="date" class="form-control" id="class_date" name="class_date" required>
+                </div>
+                <div class="mb-3">
+                    <label for="class_time" class="form-label">Time</label>
+                    <input type="time" class="form-control" id="class_time" name="class_time" required>
+                </div>
+                <div class="mb-3">
+                    <label for="teacher_id" class="form-label">Teacher</label>
+                    <select class="form-select" id="teacher_id" name="teacher_id" required>
+                        {% for teacher in teachers %}
+                            <option value="{{ teacher.id }}">{{ teacher.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="location" class="form-label">Location</label>
+                    <input type="text" class="form-control" id="location" name="location" required>
+                </div>
+                <button type="submit" name="add_class" class="btn btn-primary">Add Class</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Add Attendee Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Add New Attendee</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('frontdesk.manage') }}">
+                <div class="mb-3">
+                    <label for="attendee_name" class="form-label">Attendee Name</label>
+                    <input type="text" class="form-control" id="attendee_name" name="attendee_name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="class_id" class="form-label">Class</label>
+                    <select class="form-select" id="class_id" name="class_id" required>
+                        {% for class_ in classes %}
+                            <option value="{{ class_.id }}">{{ class_.name }} ({{ class_.date.strftime('%Y-%m-%d') }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="stipend" class="form-check-label">Stipend</label>
+                    <input type="checkbox" class="form-check-input" id="stipend" name="stipend">
+                </div>
+                <div class="mb-3">
+                    <label for="group" class="form-label">Group</label>
+                    <input type="text" class="form-control" id="group" name="group">
+                </div>
+                <div class="mb-3">
+                    <label for="group_hour" class="form-label">Group Hour</label>
+                    <input type="text" class="form-control" id="group_hour" name="group_hour">
+                </div>
+                <div class="mb-3">
+                    <label for="group_type" class="form-label">Group Type</label>
+                    <input type="text" class="form-control" id="group_type" name="group_type">
+                </div>
+                <div class="mb-3">
+                    <label for="time_in" class="form-label">Time In</label>
+                    <input type="time" class="form-control" id="time_in" name="time_in">
+                </div>
+                <div class="mb-3">
+                    <label for="time_out" class="form-label">Time Out</label>
+                    <input type="time" class="form-control" id="time_out" name="time_out">
+                </div>
+                <div class="mb-3">
+                    <label for="comments" class="form-label">Comments</label>
+                    <textarea class="form-control" id="comments" name="comments" rows="4"></textarea>
+                </div>
+                <button type="submit" name="add_attendee" class="btn btn-primary">Add Attendee</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Classes List -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Classes</h3>
+        </div>
+        <div class="card-body">
+            {% if classes %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Location</th>
+                            <th>Teacher</th>
+                            <th>Attendees</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for class_ in classes %}
+                            <tr>
+                                <td>{{ class_.name }}</td>
+                                <td>{{ class_.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ class_.time.strftime('%H:%M') }}</td>
+                                <td>{{ class_.location }}</td>
+                                <td>{{ class_.teacher.username }}</td>
+                                <td>{{ class_.attendees | length }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No classes available.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Attendees List -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Attendees</h3>
+        </div>
+        <div class="card-body">
+            {% if classes %}
+                {% for class_ in classes %}
+                    {% if class_.attendees %}
+                        <h4>{{ class_.name }} ({{ class_.date.strftime('%Y-%m-%d') }})</h4>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Stipend</th>
+                                    <th>Group</th>
+                                    <th>Group Hour</th>
+                                    <th>Group Type</th>
+                                    <th>Time In</th>
+                                    <th>Time Out</th>
+                                    <th>Comments</th>
+                                    <th>Checked In</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attendee in class_.attendees %}
+                                    <tr>
+                                        <td>{{ attendee.name }}</td>
+                                        <td>{{ 'Yes' if attendee.stipend else 'No' }}</td>
+                                        <td>{{ attendee.group or '-' }}</td>
+                                        <td>{{ attendee.group_hour or '-' }}</td>
+                                        <td>{{ attendee.group_type or '-' }}</td>
+                                        <td>{{ attendee.time_in.strftime('%H:%M') if attendee.time_in else '-' }}</td>
+                                        <td>{{ attendee.time_out.strftime('%H:%M') if attendee.time_out else '-' }}</td>
+                                        <td>{{ attendee.comments or '-' }}</td>
+                                        <td>{{ 'Yes' if attendee.checked_in else 'No' }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+                {% endfor %}
+                {% if not classes | selectattr('attendees') | list %}
+                    <p>No attendees registered.</p>
+                {% endif %}
+            {% else %}
+                <p>No attendees available.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <a href="{{ url_for('frontdesk.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+    <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary">Logout</a>
+</div>
+{% endblock %}

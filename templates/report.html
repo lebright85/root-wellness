@@ -14,9 +14,34 @@
         {% endif %}
     {% endwith %}
     
+    <!-- Date Range Form -->
     <div class="card mb-4">
         <div class="card-header">
-            <h3>Class and Attendee Summary</h3>
+            <h3>Select Date Range</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('admin.report') }}">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="start_date" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date.strftime('%Y-%m-%d') if start_date else '' }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="end_date" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date.strftime('%Y-%m-%d') if end_date else '' }}">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary">Filter Report</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Report Summary and Table -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Class and Attendee Summary {% if start_date and end_date %} ({{ start_date.strftime('%Y-%m-%d') }} to {{ end_date.strftime('%Y-%m-%d') }}) {% endif %}</h3>
         </div>
         <div class="card-body">
             <p>Total Classes: {{ total_classes }}</p>
@@ -52,7 +77,7 @@
                     </tbody>
                 </table>
             {% else %}
-                <p>No classes available.</p>
+                <p>No classes available for the selected date range.</p>
             {% endif %}
         </div>
     </div>

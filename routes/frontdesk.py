@@ -17,6 +17,55 @@ def dashboard():
     teachers = User.query.filter_by(role='teacher').all()
     today = date.today()
     today_classes = Class.query.filter(Class.date == today).all()
+    total_classes = len(classes)
+    total_attendees = Attendee.query.count()
+    checked_in_attendees = Attendee.query.filter_by(checked_in=True).count()
+    
+    if request.method == 'POST':
+        # Check In Attendee
+        if 'check_in' in request.form:
+            try:
+                attendee_id = int(request.form['attendee_id'])
+                attendee = Attendee.query.get_or_404(attendee_id)
+                attendee.checked_in = True
+                attendee.time_in = datetime.now().time()
+                db.session.commit()
+                flash(f'{attendee.name} checked in successfully.', 'success')
+            except ValueError as e:
+                flash(f'Error checking in attendee: {str(e)}', 'danger')
+        
+        # Check Out Attendee
+        elif 'check_out' in request.form:
+            try:
+                attendee_id = int(request.form['attendee_id'])
+                attendee = Attendee.query.get_or_404(attendee_id)
+                attendee.checked_in = False
+                attendee.time_out = datetime.now().time()
+                db.session.commit()
+                flash(f'{attendee.name} checked out successfully.', 'success')
+            except ValueError as e:
+                flash(f'Error checking out attendee: {str(e)}', 'danger')
+        
+        return redirect(url_for('frontdesk.dashboard'))
+    
+    return render_template('frontdesk_dashboard.html', 
+                         classes=classes, 
+                         teachers=teachers, 
+                         today_classes=today_classes, 
+                         today=today,
+                         total_classes=total_classes,
+                         total_attendees=total_attendees,
+                         checked_in_attendees=checked_in_attendees)
+
+@bp.route('/frontdesk/manage', methods=['GET', 'POST'])
+@login_required
+def manage():
+    if current_user.role != 'frontdesk':
+        flash('Access denied: Front Desk only.', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    classes = Class.query.all()
+    teachers = User.query.filter_by(role='teacher').all()
     
     if request.method == 'POST':
         # Add Class
@@ -72,34 +121,8 @@ def dashboard():
             except ValueError as e:
                 flash(f'Error adding attendee: {str(e)}', 'danger')
         
-        # Check In Attendee
-        elif 'check_in' in request.form:
-            try:
-                attendee_id = int(request.form['attendee_id'])
-                attendee = Attendee.query.get_or_404(attendee_id)
-                attendee.checked_in = True
-                attendee.time_in = datetime.now().time()
-                db.session.commit()
-                flash(f'{attendee.name} checked in successfully.', 'success')
-            except ValueError as e:
-                flash(f'Error checking in attendee: {str(e)}', 'danger')
-        
-        # Check Out Attendee
-        elif 'check_out' in request.form:
-            try:
-                attendee_id = int(request.form['attendee_id'])
-                attendee = Attendee.query.get_or_404(attendee_id)
-                attendee.checked_in = False
-                attendee.time_out = datetime.now().time()
-                db.session.commit()
-                flash(f'{attendee.name} checked out successfully.', 'success')
-            except ValueError as e:
-                flash(f'Error checking out attendee: {str(e)}', 'danger')
-        
-        return redirect(url_for('frontdesk.dashboard'))
+        return redirect(url_for('frontdesk.manage'))
     
-    return render_template('frontdesk_dashboard.html', 
+    return render_template('frontdesk_manage.html', 
                          classes=classes, 
-                         teachers=teachers, 
-                         today_classes=today_classes, 
-                         today=today)
+                         teachers=teachers)

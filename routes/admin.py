@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from models import Class, Attendee, User
 from extensions import db
-from datetime import datetime, time
+from datetime import datetime, time, date
 from werkzeug.security import generate_password_hash
 import csv
 import io
@@ -135,23 +135,54 @@ def manage():
     
     return render_template('admin_manage.html', classes=classes, teachers=teachers)
 
-@bp.route('/admin/report')
+@bp.route('/admin/report', methods=['GET', 'POST'])
 @login_required
 def report():
     if current_user.role != 'admin':
         flash('Access denied: Admins only.', 'danger')
         return redirect(url_for('auth.login'))
     
-    classes = Class.query.all()
+    start_date = None
+    end_date = None
+    classes_query = Class.query
+    
+    if request.method == 'POST':
+        try:
+            start_date_str = request.form.get('start_date')
+            end_date_str = request.form.get('end_date')
+            
+            if start_date_str:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                classes_query = classes_query.filter(Class.date >= start_date)
+            if end_date_str:
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+                classes_query = classes_query.filter(Class.date <= end_date)
+            
+            if start_date and end_date and start_date > end_date:
+                flash('Start date must be before or equal to end date.', 'danger')
+                return redirect(url_for('admin.report'))
+                
+        except ValueError as e:
+            flash(f'Invalid date format: {str(e)}', 'danger')
+            return redirect(url_for('admin.report'))
+    
+    classes = classes_query.all()
     total_classes = len(classes)
-    total_attendees = Attendee.query.count()
-    checked_in_attendees = Attendee.query.filter_by(checked_in=True).count()
+    total_attendees = sum(len(class_.attendees) for class_ in classes)
+    checked_in_attendees = sum(len([a for a in class_.attendees if a.checked_in]) for class_ in classes)
+    
+    # Store date range in session for download_report
+    from flask import session
+    session['report_start_date'] = start_date.strftime('%Y-%m-%d') if start_date else None
+    session['report_end_date'] = end_date.strftime('%Y-%m-%d') if end_date else None
     
     return render_template('report.html', 
                          classes=classes, 
                          total_classes=total_classes, 
                          total_attendees=total_attendees, 
-                         checked_in_attendees=checked_in_attendees)
+                         checked_in_attendees=checked_in_attendees,
+                         start_date=start_date,
+                         end_date=end_date)
 
 @bp.route('/admin/download_report')
 @login_required
@@ -160,7 +191,31 @@ def download_report():
         flash('Access denied: Admins only.', 'danger')
         return redirect(url_for('auth.login'))
     
-    classes = Class.query.all()
+    from flask import session
+    start_date = None
+    end_date = None
+    classes_query = Class.query
+    
+    try:
+        start_date_str = session.get('report_start_date')
+        end_date_str = session.get('report_end_date')
+        
+        if start_date_str:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            classes_query = classes_query.filter(Class.date >= start_date)
+        if end_date_str:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            classes_query = classes_query.filter(Class.date <= end_date)
+            
+        if start_date and end_date and start_date > end_date:
+            flash('Invalid date range in session.', 'danger')
+            return redirect(url_for('admin.report'))
+            
+    except ValueError as e:
+        flash(f'Invalid date format in session: {str(e)}', 'danger')
+        return redirect(url_for('admin.report'))
+    
+    classes = classes_query.all()
     
     # Create CSV in memory
     output = io.StringIO()
@@ -208,11 +263,12 @@ def download_report():
     
     # Prepare file for download
     output.seek(0)
+    filename = f"report_{start_date.strftime('%Y%m%d')}_{end_date.strftime('%Y%m%d')}.csv" if start_date and end_date else 'report.csv'
     return send_file(
         io.BytesIO(output.getvalue().encode('utf-8')),
         mimetype='text/csv',
         as_attachment=True,
-        download_name='report.csv'
+        download_name=filename
     )
 
 @bp.route('/admin/users', methods=['GET', 'POST'])
