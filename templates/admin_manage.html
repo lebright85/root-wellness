@@ -22,7 +22,7 @@
         <div class="card-body">
             <form method="POST" action="{{ url_for('admin.manage') }}">
                 <div class="mb-3">
-                    <label for="class_name" class="form-label">Class Name</label FIR
+                    <label for="class_name" class="form-label">Class Name</label>
                     <input type="text" class="form-control" id="class_name" name="class_name" required>
                 </div>
                 <div class="mb-3">
@@ -178,6 +178,10 @@
                                                     <div class="modal-body">
                                                         <form method="POST" action="{{ url_for('admin.manage') }}">
                                                             <input type="hidden" name="attendee_id" value="{{ attendee.id }}">
+                                                            <div class="mb-3">
+                                                                <label for="edit_attendee_id-{{ attendee.id }}" class="form-label">Attendee ID (optional)</label>
+                                                                <input type="text" class="form-control" id="edit_attendee_id-{{ attendee.id }}" name="edit_attendee_id" value="{{ attendee.attendee_id or '' }}">
+                                                            </div>
                                                             <div class="mb-3">
                                                                 <label for="edit_attendee_name-{{ attendee.id }}" class="form-label">Attendee Name</label>
                                                                 <input type="text" class="form-control" id="edit_attendee_name-{{ attendee.id }}" name="edit_attendee_name" value="{{ attendee.name }}" required>

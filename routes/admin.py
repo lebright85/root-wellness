@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file
+from flask import session
 from flask_login import login_required, current_user
 from models import Class, Attendee, User
 from extensions import db
@@ -107,6 +108,16 @@ def manage():
             try:
                 attendee_id = int(request.form['attendee_id'])
                 attendee = Attendee.query.get_or_404(attendee_id)
+                new_attendee_id = request.form.get('edit_attendee_id') or None
+                
+                # Check for duplicate attendee_id, excluding the current attendee
+                if new_attendee_id and new_attendee_id != attendee.attendee_id:
+                    existing_attendee = Attendee.query.filter_by(attendee_id=new_attendee_id).first()
+                    if existing_attendee:
+                        flash('Attendee ID already exists.', 'danger')
+                        return redirect(url_for('admin.manage'))
+                
+                attendee.attendee_id = new_attendee_id
                 attendee.name = request.form['edit_attendee_name']
                 attendee.class_id = int(request.form['edit_class_id'])
                 attendee.stipend = 'edit_engagement' in request.form
@@ -148,15 +159,24 @@ def report():
         flash('Access denied: Admins only.', 'danger')
         return redirect(url_for('auth.login'))
     
+    # Initialize variables
     start_date = None
     end_date = None
+    counselor_id = None
+    selected_attendee_id = None
+    selected_class_id = None
     classes_query = Class.query
+    
+    # Get filter options
+    counselors = User.query.filter_by(role='teacher').all()
+    attendees = Attendee.query.distinct().all()
+    classes_list = Class.query.all()
     
     if request.method == 'POST':
         try:
+            # Date filters
             start_date_str = request.form.get('start_date')
             end_date_str = request.form.get('end_date')
-            
             if start_date_str:
                 start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
                 classes_query = classes_query.filter(Class.date >= start_date)
@@ -167,9 +187,27 @@ def report():
             if start_date and end_date and start_date > end_date:
                 flash('Start date must be before or equal to end date.', 'danger')
                 return redirect(url_for('admin.report'))
-                
+            
+            # Counselor filter
+            counselor_id_str = request.form.get('counselor_id')
+            if counselor_id_str:
+                counselor_id = int(counselor_id_str)
+                classes_query = classes_query.filter(Class.teacher_id == counselor_id)
+            
+            # Class filter
+            class_id_str = request.form.get('class_id')
+            if class_id_str:
+                selected_class_id = int(class_id_str)
+                classes_query = classes_query.filter(Class.id == selected_class_id)
+            
+            # Attendee filter
+            attendee_id_str = request.form.get('attendee_id')
+            if attendee_id_str:
+                selected_attendee_id = int(attendee_id_str)
+                classes_query = classes_query.join(Attendee).filter(Attendee.id == selected_attendee_id)
+            
         except ValueError as e:
-            flash(f'Invalid date format: {str(e)}', 'danger')
+            flash(f'Invalid input: {str(e)}', 'danger')
             return redirect(url_for('admin.report'))
     
     classes = classes_query.all()
@@ -177,18 +215,28 @@ def report():
     total_attendees = sum(len(class_.attendees) for class_ in classes)
     checked_in_attendees = sum(len([a for a in class_.attendees if a.checked_in]) for class_ in classes)
     
-    # Store date range in session for download_report
-    from flask import session
+    # Store filters in session for download_report
     session['report_start_date'] = start_date.strftime('%Y-%m-%d') if start_date else None
     session['report_end_date'] = end_date.strftime('%Y-%m-%d') if end_date else None
+    session['report_counselor_id'] = counselor_id
+    session['report_attendee_id'] = selected_attendee_id
+    session['report_class_id'] = selected_class_id
     
-    return render_template('report.html', 
-                         classes=classes, 
-                         total_classes=total_classes, 
-                         total_attendees=total_attendees, 
-                         checked_in_attendees=checked_in_attendees,
-                         start_date=start_date,
-                         end_date=end_date)
+    return render_template(
+        'report.html',
+        classes=classes,
+        total_classes=total_classes,
+        total_attendees=total_attendees,
+        checked_in_attendees=checked_in_attendees,
+        start_date=start_date,
+        end_date=end_date,
+        counselors=counselors,
+        attendees=attendees,
+        classes_list=classes_list,
+        counselor_id=counselor_id,
+        selected_attendee_id=selected_attendee_id,
+        selected_class_id=selected_class_id
+    )
 
 @bp.route('/admin/download_report')
 @login_required
@@ -197,28 +245,43 @@ def download_report():
         flash('Access denied: Admins only.', 'danger')
         return redirect(url_for('admin.report'))
     
-    from flask import session
+    # Initialize query
     start_date = None
     end_date = None
+    counselor_id = session.get('report_counselor_id')
+    selected_attendee_id = session.get('report_attendee_id')
+    selected_class_id = session.get('report_class_id')
     classes_query = Class.query
     
     try:
+        # Apply date filters
         start_date_str = session.get('report_start_date')
         end_date_str = session.get('report_end_date')
-        
         if start_date_str:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
             classes_query = classes_query.filter(Class.date >= start_date)
         if end_date_str:
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
             classes_query = classes_query.filter(Class.date <= end_date)
-            
+        
         if start_date and end_date and start_date > end_date:
             flash('Invalid date range in session.', 'danger')
             return redirect(url_for('admin.report'))
+        
+        # Apply counselor filter
+        if counselor_id:
+            classes_query = classes_query.filter(Class.teacher_id == counselor_id)
+        
+        # Apply class filter
+        if selected_class_id:
+            classes_query = classes_query.filter(Class.id == selected_class_id)
+        
+        # Apply attendee filter
+        if selected_attendee_id:
+            classes_query = classes_query.join(Attendee).filter(Attendee.id == selected_attendee_id)
             
     except ValueError as e:
-        flash(f'Invalid date format in session: {str(e)}', 'danger')
+        flash(f'Invalid data in session: {str(e)}', 'danger')
         return redirect(url_for('admin.report'))
     
     classes = classes_query.all()
