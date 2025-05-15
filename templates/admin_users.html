@@ -34,26 +34,31 @@
                     <select class="form-select" id="role" name="role" required>
                         <option value="admin">Admin</option>
                         <option value="frontdesk">Front Desk</option>
-                        <option value="teacher">Teacher</option>
+                        <option value="teacher">Counselor</option>
                     </select>
+                </div>
+                <div class="mb-3">
+                    <label for="credential" class="form-label">Credential (optional)</label>
+                    <input type="text" class="form-control" id="credential" name="department" placeholder="e.g., Licensed Yoga Instructor">
                 </div>
                 <button type="submit" name="add_user" class="btn btn-primary">Add User</button>
             </form>
         </div>
     </div>
     
-    <!-- List Users -->
-    {% if users %}
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3>Users</h3>
-            </div>
-            <div class="card-body">
+    <!-- Users List -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Users</h3>
+        </div>
+        <div class="card-body">
+            {% if users %}
                 <table class="table table-striped">
                     <thead>
                         <tr>
                             <th>Username</th>
                             <th>Role</th>
+                            <th>Credential</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -61,60 +66,72 @@
                         {% for user in users %}
                             <tr>
                                 <td>{{ user.username }}</td>
-                                <td>{{ user.role | capitalize }}</td>
                                 <td>
-                                    <!-- Edit User Form -->
-                                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editUserModal{{ user.id }}">
-                                        Edit
-                                    </button>
-                                    <!-- Edit User Modal -->
-                                    <div class="modal fade" id="editUserModal{{ user.id }}" tabindex="-1" aria-labelledby="editUserModalLabel{{ user.id }}" aria-hidden="true">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title" id="editUserModalLabel{{ user.id }}">Edit User: {{ user.username }}</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <form method="POST" action="{{ url_for('admin.users') }}">
-                                                        <input type="hidden" name="user_id" value="{{ user.id }}">
-                                                        <div class="mb-3">
-                                                            <label for="edit_username{{ user.id }}" class="form-label">Username</label>
-                                                            <input type="text" class="form-control" id="edit_username{{ user.id }}" name="edit_username" value="{{ user.username }}" required>
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <label for="edit_password{{ user.id }}" class="form-label">New Password (leave blank to keep unchanged)</label>
-                                                            <input type="password" class="form-control" id="edit_password{{ user.id }}" name="edit_password">
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <label for="edit_role{{ user.id }}" class="form-label">Role</label>
-                                                            <select class="form-select" id="edit_role{{ user.id }}" name="edit_role" required>
-                                                                <option value="admin" {{ 'selected' if user.role == 'admin' else '' }}>Admin</option>
-                                                                <option value="frontdesk" {{ 'selected' if user.role == 'frontdesk' else '' }}>Front Desk</option>
-                                                                <option value="teacher" {{ 'selected' if user.role == 'teacher' else '' }}>Teacher</option>
-                                                            </select>
-                                                        </div>
-                                                        <button type="submit" name="edit_user" class="btn btn-primary">Save Changes</button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    {% if user.role == 'admin' %}
+                                        Admin
+                                    {% elif user.role == 'frontdesk' %}
+                                        Front Desk
+                                    {% elif user.role == 'teacher' %}
+                                        Counselor
+                                    {% endif %}
+                                </td>
+                                <td>{{ user.department or '-' }}</td>
+                                <td>
+                                    <!-- Edit User Modal Trigger -->
+                                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editUserModal-{{ user.id }}">Edit</button>
                                     <!-- Delete User Form -->
-                                    <form method="POST" action="{{ url_for('admin.users') }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete {{ user.username }}?');">
+                                    <form method="POST" action="{{ url_for('admin.users') }}" class="d-inline">
                                         <input type="hidden" name="user_id" value="{{ user.id }}">
-                                        <button type="submit" name="delete_user" class="btn btn-danger btn-sm">Delete</button>
+                                        <button type="submit" name="delete_user" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this user?')">Delete</button>
                                     </form>
                                 </td>
                             </tr>
+                            
+                            <!-- Edit User Modal -->
+                            <div class="modal fade" id="editUserModal-{{ user.id }}" tabindex="-1" aria-labelledby="editUserModalLabel-{{ user.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="editUserModalLabel-{{ user.id }}">Edit User: {{ user.username }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <form method="POST" action="{{ url_for('admin.users') }}">
+                                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                                <div class="mb-3">
+                                                    <label for="edit_username-{{ user.id }}" class="form-label">Username</label>
+                                                    <input type="text" class="form-control" id="edit_username-{{ user.id }}" name="edit_username" value="{{ user.username }}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="edit_password-{{ user.id }}" class="form-label">Password (leave blank to keep current)</label>
+                                                    <input type="password" class="form-control" id="edit_password-{{ user.id }}" name="edit_password">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="edit_role-{{ user.id }}" class="form-label">Role</label>
+                                                    <select class="form-select" id="edit_role-{{ user.id }}" name="edit_role" required>
+                                                        <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                                                        <option value="frontdesk" {% if user.role == 'frontdesk' %}selected{% endif %}>Front Desk</option>
+                                                        <option value="teacher" {% if user.role == 'teacher' %}selected{% endif %}>Counselor</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="edit_credential-{{ user.id }}" class="form-label">Credential (optional)</label>
+                                                    <input type="text" class="form-control" id="edit_credential-{{ user.id }}" name="edit_department" value="{{ user.department or '' }}" placeholder="e.g., Licensed Yoga Instructor">
+                                                </div>
+                                                <button type="submit" name="edit_user" class="btn btn-primary">Save Changes</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         {% endfor %}
                     </tbody>
                 </table>
-            </div>
+            {% else %}
+                <p>No users found.</p>
+            {% endif %}
         </div>
-    {% else %}
-        <p>No users found.</p>
-    {% endif %}
+    </div>
     
     <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
     <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary">Logout</a>

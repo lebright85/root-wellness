@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">{{ current_user.username }} Dashboard</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Today's Classes -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Today's Classes ({{ today.strftime('%Y-%m-%d') }})</h3>
+        </div>
+        <div class="card-body">
+            {% if today_classes %}
+                {% for class_ in today_classes %}
+                    <div class="mb-3">
+                        <h4>{{ class_.name }} - {{ class_.time.strftime('%H:%M') }} at {{ class_.location }}</h4>
+                        {% if class_.attendees %}
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Attendee ID</th>
+                                        <th>Checked In</th>
+                                        <th>Time In</th>
+                                        <th>Time Out</th>
+                                        <th>Comments</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for attendee in class_.attendees %}
+                                        <tr>
+                                            <td>{{ attendee.name }}</td>
+                                            <td>{{ attendee.attendee_id }}</td>
+                                            <td>{{ 'Yes' if attendee.checked_in else 'No' }}</td>
+                                            <td>{{ attendee.time_in.strftime('%H:%M') if attendee.time_in else '-' }}</td>
+                                            <td>{{ attendee.time_out.strftime('%H:%M') if attendee.time_out else '-' }}</td>
+                                            <td>{{ attendee.comments or '-' }}</td>
+                                            <td>
+                                                <!-- Time In Form -->
+                                                <form method="POST" action="{{ url_for('teacher.dashboard') }}" class="d-inline">
+                                                    <input type="hidden" name="attendee_id" value="{{ attendee.id }}">
+                                                    <div class="input-group input-group-sm mb-1">
+                                                        <input type="time" name="time_in" class="form-control" {% if attendee.time_in %}value="{{ attendee.time_in.strftime('%H:%M') }}"{% endif %}>
+                                                        <button type="submit" name="set_time_in" class="btn btn-success btn-sm">Set Time In</button>
+                                                    </div>
+                                                </form>
+                                                <!-- Time Out Form -->
+                                                <form method="POST" action="{{ url_for('teacher.dashboard') }}" class="d-inline">
+                                                    <input type="hidden" name="attendee_id" value="{{ attendee.id }}">
+                                                    <div class="input-group input-group-sm mb-1">
+                                                        <input type="time" name="time_out" class="form-control" {% if attendee.time_out %}value="{{ attendee.time_out.strftime('%H:%M') }}"{% endif %}>
+                                                        <button type="submit" name="set_time_out" class="btn btn-warning btn-sm">Set Time Out</button>
+                                                    </div>
+                                                </form>
+                                                <!-- Comment Form -->
+                                                <form method="POST" action="{{ url_for('teacher.dashboard') }}" class="d-inline">
+                                                    <input type="hidden" name="attendee_id" value="{{ attendee.id }}">
+                                                    <div class="input-group input-group-sm">
+                                                        <textarea name="comment" class="form-control" rows="2" placeholder="Add comment">{{ attendee.comments or '' }}</textarea>
+                                                        <button type="submit" name="save_comment" class="btn btn-primary btn-sm">Save Comment</button>
+                                                    </div>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <p>No attendees registered for this class.</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No classes scheduled for today.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary">Logout</a>
+</div>
+{% endblock %}

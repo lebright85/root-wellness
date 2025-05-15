@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-5">
-    <h1 class="mb-4">Reports</h1>
+    <h1 class="mb-4">Class Report</h1>
     
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -14,10 +14,10 @@
         {% endif %}
     {% endwith %}
     
-    <!-- Date Range Form -->
+    <!-- Date Filter Form -->
     <div class="card mb-4">
         <div class="card-header">
-            <h3>Select Date Range</h3>
+            <h3>Filter by Date</h3>
         </div>
         <div class="card-body">
             <form method="POST" action="{{ url_for('admin.report') }}">
@@ -31,58 +31,90 @@
                         <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date.strftime('%Y-%m-%d') if end_date else '' }}">
                     </div>
                     <div class="col-md-4 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary">Filter Report</button>
+                        <button type="submit" class="btn btn-primary">Filter</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
     
-    <!-- Report Summary and Table -->
+    <!-- Report Summary -->
     <div class="card mb-4">
         <div class="card-header">
-            <h3>Class and Attendee Summary {% if start_date and end_date %} ({{ start_date.strftime('%Y-%m-%d') }} to {{ end_date.strftime('%Y-%m-%d') }}) {% endif %}</h3>
+            <h3>Summary</h3>
         </div>
         <div class="card-body">
-            <p>Total Classes: {{ total_classes }}</p>
-            <p>Total Attendees: {{ total_attendees }}</p>
-            <p>Checked-In Attendees: {{ checked_in_attendees }}</p>
-            
+            <p><strong>Total Classes:</strong> {{ total_classes }}</p>
+            <p><strong>Total Attendees:</strong> {{ total_attendees }}</p>
+            <p><strong>Checked-In Attendees:</strong> {{ checked_in_attendees }}</p>
+            {% if start_date or end_date %}
+                <p><strong>Date Range:</strong> 
+                    {{ start_date.strftime('%Y-%m-%d') if start_date else 'Beginning' }} 
+                    to 
+                    {{ end_date.strftime('%Y-%m-%d') if end_date else 'Today' }}
+                </p>
+            {% endif %}
+            <a href="{{ url_for('admin.download_report') }}" class="btn btn-success">Download CSV</a>
+        </div>
+    </div>
+    
+    <!-- Classes and Attendees -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Classes and Attendees</h3>
+        </div>
+        <div class="card-body">
             {% if classes %}
-                <h4>Class Details</h4>
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Class Name</th>
-                            <th>Date</th>
-                            <th>Time</th>
-                            <th>Location</th>
-                            <th>Teacher</th>
-                            <th>Attendees</th>
-                            <th>Checked-In</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for class_ in classes %}
-                            <tr>
-                                <td>{{ class_.name }}</td>
-                                <td>{{ class_.date.strftime('%Y-%m-%d') }}</td>
-                                <td>{{ class_.time.strftime('%H:%M') }}</td>
-                                <td>{{ class_.location }}</td>
-                                <td>{{ class_.teacher.username }}</td>
-                                <td>{{ class_.attendees | length }}</td>
-                                <td>{{ class_.attendees | selectattr('checked_in') | list | length }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                {% for class_ in classes %}
+                    <div class="mb-3">
+                        <h4>{{ class_.name }} - {{ class_.date.strftime('%Y-%m-%d') }} at {{ class_.time.strftime('%H:%M') }}</h4>
+                        <p><strong>Location:</strong> {{ class_.location }}</p>
+                        <p><strong>Counselor:</strong> {{ class_.teacher.username }}</p>
+                        <p><strong>Credential:</strong> {{ class_.teacher.department or '-' }}</p>
+                        {% if class_.attendees %}
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Attendee Name</th>
+                                        <th>Attendee ID</th>
+                                        <th>Engagement</th>
+                                        <th>Group</th>
+                                        <th>Group Hour</th>
+                                        <th>Group Type</th>
+                                        <th>Time In</th>
+                                        <th>Time Out</th>
+                                        <th>Comments</th>
+                                        <th>Checked In</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for attendee in class_.attendees %}
+                                        <tr>
+                                            <td>{{ attendee.name }}</td>
+                                            <td>{{ attendee.attendee_id or '-' }}</td>
+                                            <td>{{ 'Yes' if attendee.stipend else 'No' }}</td>
+                                            <td>{{ attendee.group or '-' }}</td>
+                                            <td>{{ attendee.group_hour or '-' }}</td>
+                                            <td>{{ attendee.group_type or '-' }}</td>
+                                            <td>{{ attendee.time_in.strftime('%H:%M') if attendee.time_in else '-' }}</td>
+                                            <td>{{ attendee.time_out.strftime('%H:%M') if attendee.time_out else '-' }}</td>
+                                            <td>{{ attendee.comments or '-' }}</td>
+                                            <td>{{ 'Yes' if attendee.checked_in else 'No' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <p>No attendees registered for this class.</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
             {% else %}
-                <p>No classes available for the selected date range.</p>
+                <p>No classes found for the selected date range.</p>
             {% endif %}
         </div>
     </div>
     
-    <a href="{{ url_for('admin.download_report') }}" class="btn btn-success mb-3">Download Report (CSV)</a>
     <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
     <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary">Logout</a>
 </div>

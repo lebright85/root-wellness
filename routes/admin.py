@@ -68,9 +68,10 @@ def manage():
         # Add Attendee
         elif 'add_attendee' in request.form:
             try:
+                attendee_id = request.form.get('attendee_id') or None
                 attendee_name = request.form['attendee_name']
                 class_id = int(request.form['class_id'])
-                stipend = 'stipend' in request.form
+                engagement = 'engagement' in request.form
                 group = request.form['group'] or None
                 group_hour = request.form['group_hour'] or None
                 group_type = request.form['group_type'] or None
@@ -78,10 +79,15 @@ def manage():
                 time_out = datetime.strptime(request.form['time_out'], '%H:%M').time() if request.form['time_out'] else None
                 comments = request.form['comments'] or None
                 
+                if attendee_id and Attendee.query.filter_by(attendee_id=attendee_id).first():
+                    flash('Attendee ID already exists.', 'danger')
+                    return redirect(url_for('admin.manage'))
+                
                 new_attendee = Attendee(
+                    attendee_id=attendee_id,
                     name=attendee_name,
                     class_id=class_id,
-                    stipend=stipend,
+                    stipend=engagement,
                     group=group,
                     group_hour=group_hour,
                     group_type=group_type,
@@ -103,7 +109,7 @@ def manage():
                 attendee = Attendee.query.get_or_404(attendee_id)
                 attendee.name = request.form['edit_attendee_name']
                 attendee.class_id = int(request.form['edit_class_id'])
-                attendee.stipend = 'edit_stipend' in request.form
+                attendee.stipend = 'edit_engagement' in request.form
                 attendee.group = request.form['edit_group'] or None
                 attendee.group_hour = request.form['edit_group_hour'] or None
                 attendee.group_type = request.form['edit_group_type'] or None
@@ -189,7 +195,7 @@ def report():
 def download_report():
     if current_user.role != 'admin':
         flash('Access denied: Admins only.', 'danger')
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('admin.report'))
     
     from flask import session
     start_date = None
@@ -223,8 +229,8 @@ def download_report():
     
     # Write headers
     headers = [
-        'Class Name', 'Date', 'Time', 'Location', 'Teacher',
-        'Attendee Name', 'Stipend', 'Group', 'Group Hour', 'Group Type',
+        'Class Name', 'Date', 'Time', 'Location', 'Counselor', 'Credential',
+        'Attendee Name', 'Attendee ID', 'Engagement', 'Group', 'Group Hour', 'Group Type',
         'Time In', 'Time Out', 'Comments', 'Checked In'
     ]
     writer.writerow(headers)
@@ -238,7 +244,9 @@ def download_report():
                 class_.time.strftime('%H:%M'),
                 class_.location,
                 class_.teacher.username,
+                class_.teacher.department or '',
                 attendee.name,
+                attendee.attendee_id or '',
                 'Yes' if attendee.stipend else 'No',
                 attendee.group or '',
                 attendee.group_hour or '',
@@ -257,7 +265,8 @@ def download_report():
                 class_.time.strftime('%H:%M'),
                 class_.location,
                 class_.teacher.username,
-                '', '', '', '', '', '', '', '', ''
+                class_.teacher.department or '',
+                '', '', '', '', '', '', '', '', '', ''
             ]
             writer.writerow(row)
     
@@ -287,6 +296,7 @@ def users():
                 username = request.form['username']
                 password = request.form['password']
                 role = request.form['role']
+                department = request.form.get('department') or None
                 
                 if User.query.filter_by(username=username).first():
                     flash('Username already exists.', 'danger')
@@ -296,7 +306,7 @@ def users():
                     flash('Invalid role.', 'danger')
                     return redirect(url_for('admin.users'))
                 
-                new_user = User(username=username, role=role)
+                new_user = User(username=username, role=role, department=department)
                 new_user.set_password(password)
                 db.session.add(new_user)
                 db.session.commit()
@@ -312,6 +322,7 @@ def users():
                 username = request.form['edit_username']
                 password = request.form['edit_password']
                 role = request.form['edit_role']
+                department = request.form.get('edit_department') or None
                 
                 if username != user.username and User.query.filter_by(username=username).first():
                     flash('Username already exists.', 'danger')
@@ -325,6 +336,7 @@ def users():
                 if password:
                     user.set_password(password)
                 user.role = role
+                user.department = department
                 db.session.commit()
                 flash('User updated successfully.', 'success')
             except ValueError as e:

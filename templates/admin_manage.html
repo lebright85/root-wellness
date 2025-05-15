@@ -22,7 +22,7 @@
         <div class="card-body">
             <form method="POST" action="{{ url_for('admin.manage') }}">
                 <div class="mb-3">
-                    <label for="class_name" class="form-label">Class Name</label>
+                    <label for="class_name" class="form-label">Class Name</label FIR
                     <input type="text" class="form-control" id="class_name" name="class_name" required>
                 </div>
                 <div class="mb-3">
@@ -34,7 +34,7 @@
                     <input type="time" class="form-control" id="class_time" name="class_time" required>
                 </div>
                 <div class="mb-3">
-                    <label for="teacher_id" class="form-label">Teacher</label>
+                    <label for="teacher_id" class="form-label">Counselor</label>
                     <select class="form-select" id="teacher_id" name="teacher_id" required>
                         {% for teacher in teachers %}
                             <option value="{{ teacher.id }}">{{ teacher.username }}</option>
@@ -58,6 +58,10 @@
         <div class="card-body">
             <form method="POST" action="{{ url_for('admin.manage') }}">
                 <div class="mb-3">
+                    <label for="attendee_id" class="form-label">Attendee ID (optional)</label>
+                    <input type="text" class="form-control" id="attendee_id" name="attendee_id">
+                </div>
+                <div class="mb-3">
                     <label for="attendee_name" class="form-label">Attendee Name</label>
                     <input type="text" class="form-control" id="attendee_name" name="attendee_name" required>
                 </div>
@@ -65,36 +69,38 @@
                     <label for="class_id" class="form-label">Class</label>
                     <select class="form-select" id="class_id" name="class_id" required>
                         {% for class_ in classes %}
-                            <option value="{{ class_.id }}">{{ class_.name }} ({{ class_.date.strftime('%Y-%m-%d') }})</option>
+                            <option value="{{ class_.id }}">{{ class_.name }} - {{ class_.date.strftime('%Y-%m-%d') }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label for="stipend" class="form-check-label">Stipend</label>
-                    <input type="checkbox" class="form-check-input" id="stipend" name="stipend">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="engagement" name="engagement">
+                        <label class="form-check-label" for="engagement">Engagement</label>
+                    </div>
                 </div>
                 <div class="mb-3">
-                    <label for="group" class="form-label">Group</label>
+                    <label for="group" class="form-label">Group (optional)</label>
                     <input type="text" class="form-control" id="group" name="group">
                 </div>
                 <div class="mb-3">
-                    <label for="group_hour" class="form-label">Group Hour</label>
+                    <label for="group_hour" class="form-label">Group Hour (optional)</label>
                     <input type="text" class="form-control" id="group_hour" name="group_hour">
                 </div>
                 <div class="mb-3">
-                    <label for="group_type" class="form-label">Group Type</label>
+                    <label for="group_type" class="form-label">Group Type (optional)</label>
                     <input type="text" class="form-control" id="group_type" name="group_type">
                 </div>
                 <div class="mb-3">
-                    <label for="time_in" class="form-label">Time In</label>
+                    <label for="time_in" class="form-label">Time In (optional)</label>
                     <input type="time" class="form-control" id="time_in" name="time_in">
                 </div>
                 <div class="mb-3">
-                    <label for="time_out" class="form-label">Time Out</label>
+                    <label for="time_out" class="form-label">Time Out (optional)</label>
                     <input type="time" class="form-control" id="time_out" name="time_out">
                 </div>
                 <div class="mb-3">
-                    <label for="comments" class="form-label">Comments</label>
+                    <label for="comments" class="form-label">Comments (optional)</label>
                     <textarea class="form-control" id="comments" name="comments" rows="4"></textarea>
                 </div>
                 <button type="submit" name="add_attendee" class="btn btn-primary">Add Attendee</button>
@@ -102,54 +108,168 @@
         </div>
     </div>
     
-    <!-- List Classes and Attendees -->
-    {% if classes %}
-        {% for class_ in classes %}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3>{{ class_.name }} - {{ class_.date.strftime('%Y-%m-%d') }} at {{ class_.time.strftime('%H:%M') }}</h3>
-                    <p>Location: {{ class_.location }} | Teacher: {{ class_.teacher.username }}</p>
-                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editClassModal{{ class_.id }}">
-                        Edit Class
-                    </button>
-                    <form method="POST" action="{{ url_for('admin.manage') }}" class="d-inline">
-                        <input type="hidden" name="class_id" value="{{ class_.id }}">
-                        <button type="submit" name="delete_class" class="btn btn-danger btn-sm">Delete Class</button>
-                    </form>
+    <!-- Classes and Attendees -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Classes and Attendees</h3>
+        </div>
+        <div class="card-body">
+            {% if classes %}
+                {% for class_ in classes %}
+                    <div class="mb-3">
+                        <h4>{{ class_.name }} - {{ class_.date.strftime('%Y-%m-%d') }} at {{ class_.time.strftime('%H:%M') }}</h4>
+                        <p><strong>Location:</strong> {{ class_.location }}</p>
+                        <p><strong>Counselor:</strong> {{ class_.teacher.username }}</p>
+                        <!-- Edit Class Modal Trigger -->
+                        <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editClassModal-{{ class_.id }}">Edit Class</button>
+                        <!-- Delete Class Form -->
+                        <form method="POST" action="{{ url_for('admin.manage') }}" class="d-inline">
+                            <input type="hidden" name="class_id" value="{{ class_.id }}">
+                            <button type="submit" name="delete_class" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this class?')">Delete Class</button>
+                        </form>
+                        
+                        {% if class_.attendees %}
+                            <table class="table table-striped mt-3">
+                                <thead>
+                                    <tr>
+                                        <th>Attendee Name</th>
+                                        <th>Attendee ID</th>
+                                        <th>Engagement</th>
+                                        <th>Group</th>
+                                        <th>Group Hour</th>
+                                        <th>Group Type</th>
+                                        <th>Time In</th>
+                                        <th>Time Out</th>
+                                        <th>Comments</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for attendee in class_.attendees %}
+                                        <tr>
+                                            <td>{{ attendee.name }}</td>
+                                            <td>{{ attendee.attendee_id or '-' }}</td>
+                                            <td>{{ 'Yes' if attendee.stipend else 'No' }}</td>
+                                            <td>{{ attendee.group or '-' }}</td>
+                                            <td>{{ attendee.group_hour or '-' }}</td>
+                                            <td>{{ attendee.group_type or '-' }}</td>
+                                            <td>{{ attendee.time_in.strftime('%H:%M') if attendee.time_in else '-' }}</td>
+                                            <td>{{ attendee.time_out.strftime('%H:%M') if attendee.time_out else '-' }}</td>
+                                            <td>{{ attendee.comments or '-' }}</td>
+                                            <td>
+                                                <!-- Edit Attendee Modal Trigger -->
+                                                <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editAttendeeModal-{{ attendee.id }}">Edit</button>
+                                                <!-- Delete Attendee Form -->
+                                                <form method="POST" action="{{ url_for('admin.manage') }}" class="d-inline">
+                                                    <input type="hidden" name="attendee_id" value="{{ attendee.id }}">
+                                                    <button type="submit" name="delete_attendee" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this attendee?')">Delete</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Edit Attendee Modal -->
+                                        <div class="modal fade" id="editAttendeeModal-{{ attendee.id }}" tabindex="-1" aria-labelledby="editAttendeeModalLabel-{{ attendee.id }}" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="editAttendeeModalLabel-{{ attendee.id }}">Edit Attendee: {{ attendee.name }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <form method="POST" action="{{ url_for('admin.manage') }}">
+                                                            <input type="hidden" name="attendee_id" value="{{ attendee.id }}">
+                                                            <div class="mb-3">
+                                                                <label for="edit_attendee_name-{{ attendee.id }}" class="form-label">Attendee Name</label>
+                                                                <input type="text" class="form-control" id="edit_attendee_name-{{ attendee.id }}" name="edit_attendee_name" value="{{ attendee.name }}" required>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label for="edit_class_id-{{ attendee.id }}" class="form-label">Class</label>
+                                                                <select class="form-select" id="edit_class_id-{{ attendee.id }}" name="edit_class_id" required>
+                                                                    {% for class_ in classes %}
+                                                                        <option value="{{ class_.id }}" {% if class_.id == attendee.class_id %}selected{% endif %}>
+                                                                            {{ class_.name }} - {{ class_.date.strftime('%Y-%m-%d') }}
+                                                                        </option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input" type="checkbox" id="edit_engagement-{{ attendee.id }}" name="edit_engagement" {% if attendee.stipend %}checked{% endif %}>
+                                                                    <label class="form-check-label" for="edit_engagement-{{ attendee.id }}">Engagement</label>
+                                                                </div>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label for="edit_group-{{ attendee.id }}" class="form-label">Group (optional)</label>
+                                                                <input type="text" class="form-control" id="edit_group-{{ attendee.id }}" name="edit_group" value="{{ attendee.group or '' }}">
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label for="edit_group_hour-{{ attendee.id }}" class="form-label">Group Hour (optional)</label>
+                                                                <input type="text" class="form-control" id="edit_group_hour-{{ attendee.id }}" name="edit_group_hour" value="{{ attendee.group_hour or '' }}">
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label for="edit_group_type-{{ attendee.id }}" class="form-label">Group Type (optional)</label>
+                                                                <input type="text" class="form-control" id="edit_group_type-{{ attendee.id }}" name="edit_group_type" value="{{ attendee.group_type or '' }}">
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label for="edit_time_in-{{ attendee.id }}" class="form-label">Time In (optional)</label>
+                                                                <input type="time" class="form-control" id="edit_time_in-{{ attendee.id }}" name="edit_time_in" value="{{ attendee.time_in.strftime('%H:%M') if attendee.time_in else '' }}">
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label for="edit_time_out-{{ attendee.id }}" class="form-label">Time Out (optional)</label>
+                                                                <input type="time" class="form-control" id="edit_time_out-{{ attendee.id }}" name="edit_time_out" value="{{ attendee.time_out.strftime('%H:%M') if attendee.time_out else '' }}">
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label for="edit_comments-{{ attendee.id }}" class="form-label">Comments (optional)</label>
+                                                                <textarea class="form-control" id="edit_comments-{{ attendee.id }}" name="edit_comments" rows="4">{{ attendee.comments or '' }}</textarea>
+                                                            </div>
+                                                            <button type="submit" name="edit_attendee" class="btn btn-primary">Save Changes</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <p>No attendees registered for this class.</p>
+                        {% endif %}
+                    </div>
+                    
                     <!-- Edit Class Modal -->
-                    <div class="modal fade" id="editClassModal{{ class_.id }}" tabindex="-1" aria-labelledby="editClassModalLabel{{ class_.id }}" aria-hidden="true">
+                    <div class="modal fade" id="editClassModal-{{ class_.id }}" tabindex="-1" aria-labelledby="editClassModalLabel-{{ class_.id }}" aria-hidden="true">
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="editClassModalLabel{{ class_.id }}">Edit Class: {{ class_.name }}</h5>
+                                    <h5 class="modal-title" id="editClassModalLabel-{{ class_.id }}">Edit Class: {{ class_.name }}</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
                                     <form method="POST" action="{{ url_for('admin.manage') }}">
                                         <input type="hidden" name="class_id" value="{{ class_.id }}">
                                         <div class="mb-3">
-                                            <label for="edit_class_name{{ class_.id }}" class="form-label">Class Name</label>
-                                            <input type="text" class="form-control" id="edit_class_name{{ class_.id }}" name="edit_class_name" value="{{ class_.name }}" required>
+                                            <label for="edit_class_name-{{ class_.id }}" class="form-label">Class Name</label>
+                                            <input type="text" class="form-control" id="edit_class_name-{{ class_.id }}" name="edit_class_name" value="{{ class_.name }}" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="edit_class_date{{ class_.id }}" class="form-label">Date</label>
-                                            <input type="date" class="form-control" id="edit_class_date{{ class_.id }}" name="edit_class_date" value="{{ class_.date.strftime('%Y-%m-%d') }}" required>
+                                            <label for="edit_class_date-{{ class_.id }}" class="form-label">Date</label>
+                                            <input type="date" class="form-control" id="edit_class_date-{{ class_.id }}" name="edit_class_date" value="{{ class_.date.strftime('%Y-%m-%d') }}" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="edit_class_time{{ class_.id }}" class="form-label">Time</label>
-                                            <input type="time" class="form-control" id="edit_class_time{{ class_.id }}" name="edit_class_time" value="{{ class_.time.strftime('%H:%M') }}" required>
+                                            <label for="edit_class_time-{{ class_.id }}" class="form-label">Time</label>
+                                            <input type="time" class="form-control" id="edit_class_time-{{ class_.id }}" name="edit_class_time" value="{{ class_.time.strftime('%H:%M') }}" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="edit_teacher_id{{ class_.id }}" class="form-label">Teacher</label>
-                                            <select class="form-select" id="edit_teacher_id{{ class_.id }}" name="edit_teacher_id" required>
+                                            <label for="edit_teacher_id-{{ class_.id }}" class="form-label">Counselor</label>
+                                            <select class="form-select" id="edit_teacher_id-{{ class_.id }}" name="edit_teacher_id" required>
                                                 {% for teacher in teachers %}
-                                                    <option value="{{ teacher.id }}" {{ 'selected' if teacher.id == class_.teacher_id else '' }}>{{ teacher.username }}</option>
+                                                    <option value="{{ teacher.id }}" {% if teacher.id == class_.teacher_id %}selected{% endif %}>{{ teacher.username }}</option>
                                                 {% endfor %}
                                             </select>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="edit_location{{ class_.id }}" class="form-label">Location</label>
-                                            <input type="text" class="form-control" id="edit_location{{ class_.id }}" name="edit_location" value="{{ class_.location }}" required>
+                                            <label for="edit_location-{{ class_.id }}" class="form-label">Location</label>
+                                            <input type="text" class="form-control" id="edit_location-{{ class_.id }}" name="edit_location" value="{{ class_.location }}" required>
                                         </div>
                                         <button type="submit" name="edit_class" class="btn btn-primary">Save Changes</button>
                                     </form>
@@ -157,116 +277,12 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="card-body">
-                    <h4>Attendees</h4>
-                    {% if class_.attendees %}
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Stipend</th>
-                                    <th>Group</th>
-                                    <th>Group Hour</th>
-                                    <th>Group Type</th>
-                                    <th>Time In</th>
-                                    <th>Time Out</th>
-                                    <th>Comments</th>
-                                    <th>Checked In</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for attendee in class_.attendees %}
-                                    <tr>
-                                        <td>{{ attendee.name }}</td>
-                                        <td>{{ 'Yes' if attendee.stipend else 'No' }}</td>
-                                        <td>{{ attendee.group or '-' }}</td>
-                                        <td>{{ attendee.group_hour or '-' }}</td>
-                                        <td>{{ attendee.group_type or '-' }}</td>
-                                        <td>{{ attendee.time_in.strftime('%H:%M') if attendee.time_in else '-' }}</td>
-                                        <td>{{ attendee.time_out.strftime('%H:%M') if attendee.time_out else '-' }}</td>
-                                        <td>{{ attendee.comments or '-' }}</td>
-                                        <td>{{ 'Yes' if attendee.checked_in else 'No' }}</td>
-                                        <td>
-                                            <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editAttendeeModal{{ attendee.id }}">
-                                                Edit
-                                            </button>
-                                            <form method="POST" action="{{ url_for('admin.manage') }}" class="d-inline">
-                                                <input type="hidden" name="attendee_id" value="{{ attendee.id }}">
-                                                <button type="submit" name="delete_attendee" class="btn btn-danger btn-sm">Delete</button>
-                                            </form>
-                                            <!-- Edit Attendee Modal -->
-                                            <div class="modal fade" id="editAttendeeModal{{ attendee.id }}" tabindex="-1" aria-labelledby="editAttendeeModalLabel{{ attendee.id }}" aria-hidden="true">
-                                                <div class="modal-dialog">
-                                                    <div class="modal-content">
-                                                        <div class="modal-header">
-                                                            <h5 class="modal-title" id="editAttendeeModalLabel{{ attendee.id }}">Edit Attendee: {{ attendee.name }}</h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                        </div>
-                                                        <div class="modal-body">
-                                                            <form method="POST" action="{{ url_for('admin.manage') }}">
-                                                                <input type="hidden" name="attendee_id" value="{{ attendee.id }}">
-                                                                <div class="mb-3">
-                                                                    <label for="edit_attendee_name{{ attendee.id }}" class="form-label">Attendee Name</label>
-                                                                    <input type="text" class="form-control" id="edit_attendee_name{{ attendee.id }}" name="edit_attendee_name" value="{{ attendee.name }}" required>
-                                                                </div>
-                                                                <div class="mb-3">
-                                                                    <label for="edit_class_id{{ attendee.id }}" class="form-label">Class</label>
-                                                                    <select class="form-select" id="edit_class_id{{ attendee.id }}" name="edit_class_id" required>
-                                                                        {% for class_option in classes %}
-                                                                            <option value="{{ class_option.id }}" {{ 'selected' if class_option.id == attendee.class_id else '' }}>{{ class_option.name }} ({{ class_option.date.strftime('%Y-%m-%d') }})</option>
-                                                                        {% endfor %}
-                                                                    </select>
-                                                                </div>
-                                                                <div class="mb-3">
-                                                                    <label for="edit_stipend{{ attendee.id }}" class="form-check-label">Stipend</label>
-                                                                    <input type="checkbox" class="form-check-input" id="edit_stipend{{ attendee.id }}" name="edit_stipend" {{ 'checked' if attendee.stipend else '' }}>
-                                                                </div>
-                                                                <div class="mb-3">
-                                                                    <label for="edit_group{{ attendee.id }}" class="form-label">Group</label>
-                                                                    <input type="text" class="form-control" id="edit_group{{ attendee.id }}" name="edit_group" value="{{ attendee.group or '' }}">
-                                                                </div>
-                                                                <div class="mb-3">
-                                                                    <label for="edit_group_hour{{ attendee.id }}" class="form-label">Group Hour</label>
-                                                                    <input type="text" class="form-control" id="edit_group_hour{{ attendee.id }}" name="edit_group_hour" value="{{ attendee.group_hour or '' }}">
-                                                                </div>
-                                                                <div class="mb-3">
-                                                                    <label for="edit_group_type{{ attendee.id }}" class="form-label">Group Type</label>
-                                                                    <input type="text" class="form-control" id="edit_group_type{{ attendee.id }}" name="edit_group_type" value="{{ attendee.group_type or '' }}">
-                                                                </div>
-                                                                <div class="mb-3">
-                                                                    <label for="edit_time_in{{ attendee.id }}" class="form-label">Time In</label>
-                                                                    <input type="time" class="form-control" id="edit_time_in{{ attendee.id }}" name="edit_time_in" value="{{ attendee.time_in.strftime('%H:%M') if attendee.time_in else '' }}">
-                                                                </div>
-                                                                <div class="mb-3">
-                                                                    <label for="edit_time_out{{ attendee.id }}" class="form-label">Time Out</label>
-                                                                    <input type="time" class="form-control" id="edit_time_out{{ attendee.id }}" name="edit_time_out" value="{{ attendee.time_out.strftime('%H:%M') if attendee.time_out else '' }}">
-                                                                </div>
-                                                                <div class="mb-3">
-                                                                    <label for="edit_comments{{ attendee.id }}" class="form-label">Comments</label>
-                                                                    <textarea class="form-control" id="edit_comments{{ attendee.id }}" name="edit_comments" rows="4">{{ attendee.comments or '' }}</textarea>
-                                                                </div>
-                                                                <button type="submit" name="edit_attendee" class="btn btn-primary">Save Changes</button>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    {% else %}
-                        <p>No attendees registered for this class.</p>
-                    {% endif %}
-                </div>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p>No classes available.</p>
-    {% endif %}
+                {% endfor %}
+            {% else %}
+                <p>No classes found.</p>
+            {% endif %}
+        </div>
+    </div>
     
     <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
     <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary">Logout</a>
