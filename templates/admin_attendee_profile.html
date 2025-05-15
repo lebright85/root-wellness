@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h1>Attendee Profile: {{ attendee.name }}</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Attendee Details -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Attendee Details</h3>
+        </div>
+        <div class="card-body">
+            <p><strong>Name:</strong> {{ attendee.name }}</p>
+            <p><strong>Attendee ID:</strong> {{ attendee.attendee_id or '-' }}</p>
+            <p><strong>Group:</strong> {{ attendee.group or '-' }}</p>
+            <p><strong>Group Hour:</strong> {{ attendee.group_hour or '-' }}</p>
+            <p><strong>Group Type:</strong> {{ attendee.group_type or '-' }}</p>
+            <p><strong>Comments:</strong> {{ attendee.comments or '-' }}</p>
+        </div>
+    </div>
+    
+    <!-- Class History -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Class History</h3>
+        </div>
+        <div class="card-body">
+            {% if classes %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Class Name</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Location</th>
+                            <th>Counselor</th>
+                            <th>Credential</th>
+                            <th>Engagement</th>
+                            <th>Time In</th>
+                            <th>Time Out</th>
+                            <th>Comments</th>
+                            <th>Checked In</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for class_ in classes %}
+                            {% for att in class_.attendees if att.id == attendee.id %}
+                                <tr>
+                                    <td>{{ class_.name }}</td>
+                                    <td>{{ class_.date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ class_.time.strftime('%H:%M') }}</td>
+                                    <td>{{ class_.location }}</td>
+                                    <td>{{ class_.teacher.username }}</td>
+                                    <td>{{ class_.teacher.department or '-' }}</td>
+                                    <td>{{ 'Yes' if att.stipend else 'No' }}</td>
+                                    <td>{{ att.time_in.strftime('%H:%M') if att.time_in else '-' }}</td>
+                                    <td>{{ att.time_out.strftime('%H:%M') if att.time_out else '-' }}</td>
+                                    <td>{{ att.comments or '-' }}</td>
+                                    <td>{{ 'Yes' if att.checked_in else 'No' }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No classes attended by this attendee.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <a href="{{ url_for('admin.manage') }}" class="btn btn-primary mt-3">Back to Manage</a>
+    <a href="{{ url_for('admin.report') }}" class="btn btn-secondary mt-3">Back to Report</a>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary mt-3">Back to Dashboard</a>
+</div>
+{% endblock %}

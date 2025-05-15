@@ -147,7 +147,7 @@
                                 <tbody>
                                     {% for attendee in class_.attendees %}
                                         <tr>
-                                            <td>{{ attendee.name }}</td>
+                                            <td><a href="{{ url_for('admin.attendee_profile', attendee_id=attendee.id) }}">{{ attendee.name }}</a></td>
                                             <td>{{ attendee.attendee_id or '-' }}</td>
                                             <td>{{ 'Yes' if attendee.stipend else 'No' }}</td>
                                             <td>{{ attendee.group or '-' }}</td>

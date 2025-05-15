@@ -424,3 +424,13 @@ def users():
         return redirect(url_for('admin.users'))
     
     return render_template('admin_users.html', users=users)
+
+@bp.route('/admin/attendee/<int:attendee_id>')
+@login_required
+def attendee_profile(attendee_id):
+    if current_user.role != 'admin':
+        flash('Access denied: Admins only.', 'danger')
+        return redirect(url_for('auth.login'))
+    attendee = Attendee.query.get_or_404(attendee_id)
+    classes = Class.query.join(Attendee).filter(Attendee.id == attendee_id).all()
+    return render_template('admin_attendee_profile.html', attendee=attendee, classes=classes)
