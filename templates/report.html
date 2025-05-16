@@ -107,8 +107,7 @@
                             <th>Time In</th>
                             <th>Time Out</th>
                             <th>Comments</th>
-                            <th>Checked In</th>
-                        </tr>
+                                                    </tr>
                     </thead>
                     <tbody>
                         {% for class_ in classes %}
@@ -130,8 +129,7 @@
                                         <td>{{ attendee.time_in.strftime('%H:%M') if attendee.time_in else '-' }}</td>
                                         <td>{{ attendee.time_out.strftime('%H:%M') if attendee.time_out else '-' }}</td>
                                         <td>{{ attendee.comments or '-' }}</td>
-                                        <td>{{ 'Yes' if attendee.checked_in else 'No' }}</td>
-                                    </tr>
+                                                                            </tr>
                                 {% endfor %}
                             {% else %}
                                 <tr>
